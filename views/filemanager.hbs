@@ -1,0 +1,120 @@
+<div>
+    <div>
+        <button id="new_folder">new folder</button>
+        <button id="new_file">new file</button>
+    </div>
+
+    <div>
+        {{!-- <button>select files to upload</button> --}}
+        <form action="uploadFiles" method="post" enctype="multipart/form-data">
+            <label for="files" class="btn">select files to upload</label>
+            <input name="files" id="files" type="file" multiple required style="display:none;">
+            <button id="uploadSubmit" type="submit" disabled>upload</button>
+        </form>
+    </div>
+</div>
+
+<div>
+    <p>folders</p>
+    <div>
+        {{#each folders}}
+            <div>
+                {{ folder }}
+                <form method="post" action="/deleteFolder" onsubmit="return confirmDelete()">
+                    <input type="hidden" name="folder_name" value="{{folder}}">
+                    <button type="submit">X</button>
+                </form>
+            </div>
+        {{/each}}
+    </div>
+
+    <p>files</p>
+    <div>
+        {{#each files}}
+            <div>
+                {{ file }}
+                <form method="post" action="/deleteFile" onsubmit="return confirmDelete()">
+                    <input type="hidden" name="file_name" value="{{file}}">
+                    <button type="submit">X</button>
+                </form>
+            </div>
+        {{/each}}
+    </div>
+</div>
+
+<div class="new_folder">
+    <p>new folder name</p>
+    <form action="/addNewFolder" method="post">
+        <input type="text" name="folder_name">
+        <div>
+            <button type="submit">
+                create
+            </button>
+            <button id="close_new_folder" type="reset" >
+                cancel
+            </button>
+        </div>
+    </form>
+</div>
+
+<div class="new_file">
+    <p>new file name</p>
+    <form action="/addNewFile" method="post">
+        <input type="text" name="file_name">
+        <div>
+            <button type="submit">
+                create
+            </button>
+            <button id="close_new_file" type="reset" >
+                cancel
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    const new_folder = document.getElementById('new_folder')
+    const new_file = document.getElementById('new_file')
+    const close_new_folder = document.getElementById('close_new_folder')
+    const close_new_file = document.getElementById('close_new_file')
+
+
+    new_folder.addEventListener("click", () => {
+        //console.log('dodaje folder')
+        document.querySelector('.new_folder').style.display = "flex"
+    })
+    new_file.addEventListener("click", () => {
+        //console.log('dodaje folder')
+        document.querySelector('.new_file').style.display = "flex"
+    })
+
+    close_new_folder.addEventListener("click", () => {
+        document.querySelector('.new_folder').style.display = "none"
+    })
+    close_new_file.addEventListener("click", () => {
+        document.querySelector('.new_file').style.display = "none"
+    })
+
+
+    function confirmDelete() {
+        return confirm("Czy na pewno chcesz usunąć ten plik/folder?");
+    }
+
+    const uploadFilesInput = document.getElementById('files')
+    const uploadSubmit = document.getElementById('uploadSubmit')
+
+    uploadFilesInput.addEventListener("change", () => {
+        if (uploadFilesInput.files.length > 0) {
+            uploadSubmit.disabled = false;
+            if (uploadFilesInput.files.length === 1){
+                uploadSubmit.innerText = 'upload 1 file'
+            }
+            else{
+                uploadSubmit.innerText = `upload ${uploadFilesInput.files.length} files`
+            }
+        } else {
+            uploadSubmit.disabled = true;
+            uploadSubmit.innerText = 'upload'
+        }
+    });
+</script>
