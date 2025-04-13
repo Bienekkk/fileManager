@@ -20,12 +20,12 @@ button:disabled, .btn:disabled{
 }
 
 .new_folder, .new_file{
-    display: none;
-    position: absolute;
+    /* display: none; */
+    /* position: absolute; */
     flex-direction: column;
     width: 200px;
     height: 100px;
-    left: calc(50% - 100px);
+    /* left: calc(50% - 100px); */
     top: calc(50% - 50px);
     background-color: cornflowerblue;
     padding: 20px;
