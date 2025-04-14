@@ -5,6 +5,9 @@
 <div>
     <div>
         <button id="new_folder">new folder</button>
+        {{#if showBtn}}
+        <button id="rename_folder">rename folder</button>        
+        {{/if}}
         <button id="new_file">new file</button>
     </div>
 
@@ -65,6 +68,22 @@
     </form>
 </dialog>
 
+<dialog class="rename_folder">
+    <p>new folder name</p>
+    <form action="/renameFolder" method="post">
+        <input type="hidden" name="old_name" value="{{root}}">
+        <input type="text" name="new_name">
+        <div>
+            <button type="submit">
+                rename
+            </button>
+            <button id="close_rename_folder" type="reset" >
+                cancel
+            </button>
+        </div>
+    </form>
+</dialog>
+
 <dialog class="new_file">
     <p>new file name</p>
     <form action="/addNewFile" method="post">
@@ -82,26 +101,20 @@
 
 <script defer>
     const new_folder = document.getElementById('new_folder')
+    const rename_folder = document.getElementById('rename_folder')
     const new_file = document.getElementById('new_file')
     const close_new_folder = document.getElementById('close_new_folder')
+    const close_rename_folder = document.getElementById('close_rename_folder')
     const close_new_file = document.getElementById('close_new_file')
     const folderDialog = document.querySelector('.new_folder')
+    const renameFolderDialog = document.querySelector('.rename_folder')
     const fileDialog = document.querySelector('.new_file')
-    {{!-- const pathDiv = document.getElementById('path')
-
-    const arr = pathDiv.innerText.split('/')
-    console.log(arr)
-    arr.forEach((el) => {
-        const link = document.createElement("a")
-        link.innerText = el
-        console.log(link)
-        pathDiv.innerHTML += link
-    }) --}}
-    //const path = {{root}}
-    //console.log("path", {{root}}) 
 
     new_folder.addEventListener("click", () => {
         folderDialog.open = true;
+    })
+    rename_folder.addEventListener("click", () => {
+        renameFolderDialog.open = true;
     })
     new_file.addEventListener("click", () => {
         fileDialog.open = true;
@@ -109,6 +122,9 @@
 
     close_new_folder.addEventListener("click", () => {
         folderDialog.open = false;
+    })
+    close_rename_folder.addEventListener("click", () => {
+        renameFolderDialog.open = false;
     })
     close_new_file.addEventListener("click", () => {
         fileDialog.open = false;

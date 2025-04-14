@@ -8,7 +8,22 @@ const fs = require("fs");
 const formidable = require("formidable");
 
 app.set("views", path.join(__dirname, "views"));
-app.engine("hbs", hbs({ defaultLayout: "main.hbs" }));
+app.engine("hbs", hbs({ 
+  defaultLayout: "main.hbs",
+  helpers: {
+    ifHome: function (root) {
+      if (root=="" || root=="/"){
+        return ""
+      }
+      else{
+        const btn = document.createElement('button')
+        btn.innerText = "rename folder"
+        btn.classList.add("rename_folder")
+        return btn
+      }
+    }
+  } 
+}));
 app.set("view engine", "hbs");
 
 app.use(
@@ -21,6 +36,10 @@ let folderpath = path.join(__dirname, "files");
 let queryPath = "";
 
 const getFiles = async (queryPath) => {
+  let showBtn = false
+  if (queryPath != "" && queryPath != "/"){
+    showBtn = true;
+  }
   folderpath = path.join(__dirname, `files${queryPath}`);
   const myFolders = [];
   const myFiles = [];
@@ -35,7 +54,7 @@ const getFiles = async (queryPath) => {
   let link = "?path=";
   segments.forEach((segment, index) => {
     if (index === 0 && segment === "") {
-      link += "/";
+      //link += "";
       linkPath.push({ name: "home", path: link });
     } else {
       link += "%2F" + segment;
@@ -56,13 +75,14 @@ const getFiles = async (queryPath) => {
         myFiles.push({ file: file });
       }
     }
-    console.log({
-      root: queryPath,
-      path: linkPath,
-      files: myFiles,
-      folders: myFolders,
-    });
+    // console.log({
+    //   root: queryPath,
+    //   path: linkPath,
+    //   files: myFiles,
+    //   folders: myFolders,
+    // });
     return {
+      showBtn: showBtn,
       root: queryPath,
       path: linkPath,
       files: myFiles,
@@ -102,6 +122,39 @@ app.post("/addNewFolder", async (req, res) => {
   }
 
   res.redirect(`/?path=${queryPath}`);
+});
+
+app.post("/renameFolder", async (req, res) => {
+  const oldName = req.body.old_name?.trim();
+  const newName = req.body.new_name?.trim();
+
+  arr = queryPath.split('/')
+  console.log(arr)
+  arr.pop()
+  renameQueryPath = arr.join('/')
+
+  let i = "";
+  if (oldName && newName) {
+    let newFullPath = path.join(__dirname, "files" + renameQueryPath + "/" + newName);
+    let oldFullPath = path.join(folderpath);
+    let counter = 0;
+    
+    console.log(newFullPath + i);
+    while (fs.existsSync(newFullPath + i)) {
+      counter++;
+      i = `(${counter})`;
+    }
+    newFullPath += i
+    try {
+      await fs.rename(oldFullPath, newFullPath, (err) => {
+       console.log("Folder renamed: ", newName + i)
+    })
+    } catch (err) {
+      console.error("Error creating folder:", err.message);
+    }
+  }
+
+  res.redirect(`/?path=${renameQueryPath + "/" + newName + i}`);
 });
 
 app.post("/addNewFile", async (req, res) => {
