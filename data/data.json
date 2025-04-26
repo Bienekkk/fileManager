@@ -1,0 +1,7 @@
+{
+  "html": "<!DOCTYPE html>\n<html lang='en'>\n<head>\n<meta charset='UTF-8'>\n<meta name='viewport' content='width=device-width, initial-scale=1.0'>\n<title>Document</title>\n</head>\n<body>\n<p>Hello world!</p>\n</body>\n</html>",
+  "js": "console.log('Hello world!')",
+  "css": "p{\nbackgouund-color: red;\n}",
+  "json": "{\nPoland': {\n'continent': 'Europe',\n'code': 'PL',\n},\n'Kanada': {'continent': 'North America',\n'code': 'CAN',\n},\n}",
+  "txt": "hello!"
+}

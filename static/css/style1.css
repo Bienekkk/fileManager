@@ -1,32 +1,85 @@
-body{
-    height: 100vh;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
-button, .btn{
-    padding: 10px;
-    background-color: cornflowerblue;
-    border: 1px solid cornflowerblue;
-    border-radius: 10px;
-    margin: 2px;
-    color: white;
+body {
+  height: 100vh;
 }
-button:hover, .btn:hover{
-    border: 1px solid cornflowerblue;
-    background-color: darkturquoise;
+.container {
+  display: flex;
+  width: 100%;
+  margin: 10px;
+  gap: 10px;
 }
-button:disabled, .btn:disabled{
-    opacity: 0.5;
-    background-color: cornflowerblue;
-    border: 1px solid cornflowerblue;
+.buttons {
+  width: 250px;
+}
+.files {
+  flex: 1;
+}
+button,
+.btn {
+  padding: 10px;
+  background-color: cornflowerblue;
+  border: 1px solid cornflowerblue;
+  border-radius: 10px;
+  margin: 2px;
+  color: white;
+}
+button:hover,
+.btn:hover {
+  border: 1px solid cornflowerblue;
+  background-color: darkturquoise;
+}
+button:disabled,
+.btn:disabled {
+  opacity: 0.5;
+  background-color: cornflowerblue;
+  border: 1px solid cornflowerblue;
 }
 
-.new_folder, .new_file{
-    /* display: none; */
-    /* position: absolute; */
-    flex-direction: column;
-    width: 200px;
-    height: 100px;
-    /* left: calc(50% - 100px); */
-    top: calc(50% - 50px);
-    background-color: cornflowerblue;
-    padding: 20px;
+.new_folder,
+.new_file,
+.rename_folder {
+  /* display: none; */
+  /* position: absolute; */
+  flex-direction: column;
+  left: calc(50% - 100px);
+  top: calc(50% - 50px);
+  background-color: cornflowerblue;
+  padding: 20px;
+}
+.flex {
+  display: flex;
+  justify-content: center;
+  flex: 1;
+}
+.column {
+  flex-direction: column;
+}
+#new_folder {
+  flex: 1;
+  border-radius: 10px 0 0 10px;
+}
+#new_file {
+  flex: 1;
+  border-radius: 0 10px 10px 0;
+}
+#rename_folder {
+  flex: 1;
+}
+#files {
+  flex: 1;
+}
+label {
+  text-align: center;
+}
+#path {
+  display: flex;
+  gap: 10px;
+  margin: 10px;
+}
+img {
+  height: 40px;
 }

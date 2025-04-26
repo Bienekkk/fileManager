@@ -1,0 +1,9 @@
+{
+'Poland': {
+'continent': 'Europe',
+'code': 'PL',
+},
+'Kanada': {'continent': 'North America',
+'code': 'CAN',
+},
+}

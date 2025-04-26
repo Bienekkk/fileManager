@@ -1,61 +1,99 @@
-<div id="path"></div>
+<div id="path">
     {{#each path}}
-        <a href="{{path}}">{{name}}</a>
-    {{/each}}
-<div>
-    <div>
-        <button id="new_folder">new folder</button>
-        {{#if showBtn}}
-        <button id="rename_folder">rename folder</button>        
+        {{#if path }}
+            <a href="{{path}}">{{name}}</a>
+        {{else}}
+            <p>{{name}}</p>
         {{/if}}
-        <button id="new_file">new file</button>
-    </div>
-
-    <div>
-        <form action="uploadFiles" method="post" enctype="multipart/form-data">
-            <label for="files" class="btn">select files to upload</label>
-            <input name="files" id="files" type="file" multiple required style="display:none;">
-            <button id="uploadSubmit" type="submit" disabled>upload</button>
-        </form>
-    </div>
+    {{/each}}
 </div>
+<div class="container">
+    <div class="buttons">
+        <div class="flex">
+            <button id="new_folder">new folder</button>
+            <button id="new_file">new file</button>
+        </div>
 
-<div>
-    <p>folders</p>
-    <div>
-        {{#each folders}}
-            <div>
-                <form action="/" method="get">
-                    {{!-- <p>{{../root}}</p> --}}
-                    <input type="hidden" value="{{../root}}/{{folder}}" name="path">
-                    <input type="submit" value="{{folder}}">
-                </form>
-               
-                <form method="post" action="/deleteFolder" onsubmit="return confirmDelete()">
-                    <input type="hidden" name="folder_name" value="{{folder}}">
-                    <button type="submit">X</button>
-                </form>
-            </div>
-        {{/each}}
+        {{#if showBtn}}
+        <div class="flex">
+            <button id="rename_folder">rename folder</button>
+        </div>  
+        {{/if}}
+
+        <div class="flex column">
+            <form action="uploadFiles" method="post" enctype="multipart/form-data" class="flex column">
+                <input type="hidden" name="query_path" value="{{root}}" />
+                <label for="files" class="btn select_files">select files to upload</label>
+                <input name="files" id="files" type="file" multiple required style="display:none;">
+                <button id="uploadSubmit" type="submit" disabled>upload</button>
+            </form>
+        </div>
     </div>
 
-    <p>files</p>
-    <div>
-        {{#each files}}
-            <div>
-                {{ file }}
-                <form method="post" action="/deleteFile" onsubmit="return confirmDelete()">
-                    <input type="hidden" name="file_name" value="{{file}}">
-                    <button type="submit">X</button>
-                </form>
-            </div>
-        {{/each}}
-    </div>
+    <table class="files">
+            {{#each folders}}
+                <tr>
+                    <td>
+                        <img src="./gfx/folders.png" alt="{{ext}}">
+                    </td>
+
+                    <td>
+                        <form action="/" method="get">
+                            {{!-- <p>{{../root}}</p> --}}
+                            <input type="hidden" value="{{../root}}/{{folder}}" name="path">
+                            <input type="hidden" name="query_path" value="{{../root}}" />
+                            <input type="submit" value="{{folder}}">
+                        </form>
+                    </td>
+                <td>
+                        <form method="post" action="/deleteFolder" onsubmit="return confirmDelete()">
+                            <input type="hidden" name="folder_name" value="{{folder}}">
+                            <input type="hidden" name="query_path" value="{{../root}}" />
+                            <button type="submit">delete</button>
+                        </form>
+                </td>
+
+                <td>
+                        <form method="post" action="/downloadFolder">
+                            <input type="hidden" name="folder_name" value="{{folder}}">
+                            <input type="hidden" name="query_path" value="{{../root}}" />
+                            <button type="submit">download</button>
+                        </form>
+                    </td>
+                </tr>
+            {{/each}}
+    
+            {{#each files}}
+                <tr>
+                    <td>
+                        <img src="./gfx/{{ext}}.png" alt="{{ext}}">
+                    </td>
+                    <td>{{ file }}</td>
+
+                    <td>
+                        <form method="post" action="/deleteFile" onsubmit="return confirmDelete()">
+                            <input type="hidden" name="file_name" value="{{file}}">
+                            <input type="hidden" name="query_path" value="{{../root}}" />
+                            <button type="submit">delete</button>
+                        </form>
+                    </td>
+
+                    <td>
+                        <form method="post" action="/downloadFile">
+                            <input type="hidden" name="file_name" value="{{file}}">
+                            <input type="hidden" name="query_path" value="{{../root}}" />
+                            <button type="submit">download</button>
+                        </form>
+                    </td>
+                </tr>
+            {{/each}}
+    </table>
 </div>
 
 <dialog class="new_folder">
     <p>new folder name</p>
     <form action="/addNewFolder" method="post">
+        <input type="hidden" name="query_path" value="{{root}}" />
         <input type="text" name="folder_name">
         <div>
             <button type="submit">
@@ -87,7 +125,15 @@
 <dialog class="new_file">
     <p>new file name</p>
     <form action="/addNewFile" method="post">
+        <input type="hidden" name="query_path" value="{{root}}" />
         <input type="text" name="file_name">
+        <select name="extension" value=".txt">
+            <option value=".css">.css</option>
+            <option value=".js">.js</option>
+            <option value=".json">.json</option>
+            <option value=".html">.html</option>
+            <option value=".txt" selected>.txt</option>
+        </select>
         <div>
             <button type="submit">
                 create
@@ -99,37 +145,40 @@
     </form>
 </dialog>
 
-<script defer>
+<script>
     const new_folder = document.getElementById('new_folder')
-    const rename_folder = document.getElementById('rename_folder')
     const new_file = document.getElementById('new_file')
     const close_new_folder = document.getElementById('close_new_folder')
-    const close_rename_folder = document.getElementById('close_rename_folder')
     const close_new_file = document.getElementById('close_new_file')
     const folderDialog = document.querySelector('.new_folder')
-    const renameFolderDialog = document.querySelector('.rename_folder')
+    
     const fileDialog = document.querySelector('.new_file')
 
     new_folder.addEventListener("click", () => {
-        folderDialog.open = true;
-    })
-    rename_folder.addEventListener("click", () => {
-        renameFolderDialog.open = true;
+        folderDialog.showModal();
     })
     new_file.addEventListener("click", () => {
-        fileDialog.open = true;
+        fileDialog.showModal();
     })
 
     close_new_folder.addEventListener("click", () => {
-        folderDialog.open = false;
-    })
-    close_rename_folder.addEventListener("click", () => {
-        renameFolderDialog.open = false;
+        folderDialog.close()
     })
     close_new_file.addEventListener("click", () => {
-        fileDialog.open = false;
+        fileDialog.close()
     })
 
+    if(document.getElementById('rename_folder')){
+        const rename_folder = document.getElementById('rename_folder')
+        const close_rename_folder = document.getElementById('close_rename_folder')
+        const renameFolderDialog = document.querySelector('.rename_folder')
+        close_rename_folder.addEventListener("click", () => {
+            renameFolderDialog.close()
+        })
+        rename_folder.addEventListener("click", () => {
+            renameFolderDialog.showModal();
+        })
+    }
 
     function confirmDelete() {
         return confirm("Czy na pewno chcesz usunąć ten plik/folder?");

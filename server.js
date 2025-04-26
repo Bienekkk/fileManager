@@ -5,25 +5,31 @@ const PORT = 3000;
 const path = require("path");
 const hbs = require("express-handlebars");
 const fs = require("fs");
+const JSZip = require("jszip");
 const formidable = require("formidable");
 
 app.set("views", path.join(__dirname, "views"));
-app.engine("hbs", hbs({ 
-  defaultLayout: "main.hbs",
-  helpers: {
-    ifHome: function (root) {
-      if (root=="" || root=="/"){
-        return ""
-      }
-      else{
-        const btn = document.createElement('button')
-        btn.innerText = "rename folder"
-        btn.classList.add("rename_folder")
-        return btn
-      }
-    }
-  } 
-}));
+app.engine(
+  "hbs",
+  hbs({
+    defaultLayout: "main.hbs",
+    helpers: {
+      ifHome: function (root) {
+        if (root == "" || root == "/") {
+          return "";
+        } else {
+          const btn = document.createElement("button");
+          btn.innerText = "rename folder";
+          btn.classList.add("rename_folder");
+          return btn;
+        }
+      },
+    },
+  })
+);
+
+app.use(express.static("static"));
+
 app.set("view engine", "hbs");
 
 app.use(
@@ -32,12 +38,13 @@ app.use(
   })
 );
 
+const content = require("./data/data.json");
 let folderpath = path.join(__dirname, "files");
-let queryPath = "";
+// let queryPath = "";
 
 const getFiles = async (queryPath) => {
-  let showBtn = false
-  if (queryPath != "" && queryPath != "/"){
+  let showBtn = false;
+  if (queryPath != "" && queryPath != "/") {
     showBtn = true;
   }
   folderpath = path.join(__dirname, `files${queryPath}`);
@@ -45,7 +52,7 @@ const getFiles = async (queryPath) => {
   const myFiles = [];
   const linkPath = [];
 
-  console.log("queryPath:", queryPath);
+  //console.log("queryPath:", queryPath);
 
   const segments = queryPath
     .split("/")
@@ -54,10 +61,10 @@ const getFiles = async (queryPath) => {
   let link = "?path=";
   segments.forEach((segment, index) => {
     if (index === 0 && segment === "") {
-      //link += "";
       linkPath.push({ name: "home", path: link });
     } else {
-      link += "%2F" + segment;
+      linkPath.push({ name: "->" });
+      link += "/" + segment;
       linkPath.push({ name: segment, path: link });
     }
   });
@@ -72,7 +79,7 @@ const getFiles = async (queryPath) => {
       if (stats.isDirectory()) {
         myFolders.push({ folder: file });
       } else {
-        myFiles.push({ file: file });
+        myFiles.push({ file: file, ext: path.extname(file).slice(1) });
       }
     }
     // console.log({
@@ -90,17 +97,22 @@ const getFiles = async (queryPath) => {
     };
   } catch (err) {
     console.error("Error reading files:", err);
-    return { files: [], folders: [] };
+    throw new Error("No such path: " + queryPath);
   }
 };
 
 app.get("/", async (req, res) => {
-  queryPath = req.query.path === undefined ? "" : req.query.path;
-  const context = await getFiles(queryPath);
-  res.render("filemanager.hbs", context);
+  try {
+    const queryPath = req.query.path || "";
+    const context = await getFiles(queryPath);
+    res.render("filemanager.hbs", context);
+  } catch (error) {
+    res.send(error.message);
+  }
 });
 
 app.post("/addNewFolder", async (req, res) => {
+  const queryPath = req.body.query_path || "";
   const folderName = req.body.folder_name?.trim();
 
   if (folderName) {
@@ -128,27 +140,29 @@ app.post("/renameFolder", async (req, res) => {
   const oldName = req.body.old_name?.trim();
   const newName = req.body.new_name?.trim();
 
-  arr = queryPath.split('/')
-  console.log(arr)
-  arr.pop()
-  renameQueryPath = arr.join('/')
+  arr = oldName.split("/");
+  arr.pop();
+  renameQueryPath = arr.join("/");
 
   let i = "";
   if (oldName && newName) {
-    let newFullPath = path.join(__dirname, "files" + renameQueryPath + "/" + newName);
+    let newFullPath = path.join(
+      __dirname,
+      "files" + renameQueryPath + "/" + newName
+    );
     let oldFullPath = path.join(folderpath);
     let counter = 0;
-    
+
     console.log(newFullPath + i);
     while (fs.existsSync(newFullPath + i)) {
       counter++;
       i = `(${counter})`;
     }
-    newFullPath += i
+    newFullPath += i;
     try {
       await fs.rename(oldFullPath, newFullPath, (err) => {
-       console.log("Folder renamed: ", newName + i)
-    })
+        console.log("Folder renamed: ", newName + i);
+      });
     } catch (err) {
       console.error("Error creating folder:", err.message);
     }
@@ -158,26 +172,30 @@ app.post("/renameFolder", async (req, res) => {
 });
 
 app.post("/addNewFile", async (req, res) => {
+  const queryPath = req.body.query_path || "";
+  const extension = req.body.extension.slice(1);
   let fileName = req.body.file_name?.trim();
 
   if (fileName) {
-    if (!path.extname(fileName)) {
-      fileName += ".txt";
-    }
+    console.log(extension, content.txt, content[extension]);
+    fileName += "." + extension;
+    const text = content[extension];
+    console.log("text", text);
 
     const baseName = path.basename(fileName, path.extname(fileName));
     const ext = path.extname(fileName);
-    let fileFullPath = path.join(folderpath, fileName);
+    let folderFullPath = path.join(__dirname, "files" + queryPath);
+    let fileFullPath = path.join(folderFullPath, fileName);
 
     let counter = 0;
     while (fs.existsSync(fileFullPath)) {
       counter++;
       const numberedName = `${baseName}(${counter})${ext}`;
-      fileFullPath = path.join(folderpath, numberedName);
+      fileFullPath = path.join(folderFullPath, numberedName);
     }
 
     try {
-      await fs.promises.writeFile(fileFullPath, "");
+      await fs.promises.writeFile(fileFullPath, text ?? "");
       console.log("File created:", fileFullPath);
     } catch (err) {
       console.error("Error creating file:", err.message);
@@ -188,6 +206,7 @@ app.post("/addNewFile", async (req, res) => {
 });
 
 app.post("/deleteFolder", async (req, res) => {
+  const queryPath = req.body.query_path || "";
   const folderName = req.body.folder_name?.trim();
 
   if (folderName) {
@@ -196,7 +215,7 @@ app.post("/deleteFolder", async (req, res) => {
       await fs.promises.rmdir(folderFullPath, { recursive: true });
       console.log("Folder deleted:", folderName);
     } catch (err) {
-      console.error("Error creating folder:", err.message);
+      console.error("Error deleting folder:", err.message);
     }
   }
 
@@ -204,19 +223,81 @@ app.post("/deleteFolder", async (req, res) => {
 });
 
 app.post("/deleteFile", async (req, res) => {
+  const queryPath = req.body.query_path || "";
   const fileName = req.body.file_name?.trim();
 
   if (fileName) {
     let fileFullPath = path.join(folderpath, fileName);
     try {
       await fs.promises.unlink(fileFullPath, { recursive: true });
-      console.log("Folder deleted:", fileName);
+      console.log("File deleted:", fileName);
     } catch (err) {
-      console.error("Error creating folder:", err.message);
+      console.error("Error deleting file:", err.message);
+    }
+  }
+  console.log("delete: ", queryPath);
+  res.redirect(`/?path=${queryPath}`);
+});
+
+app.post("/downloadFolder", async (req, res) => {
+  const folderName = req.body.folder_name?.trim();
+
+  if (!folderName) {
+    return res.status(400).send("No folder specified.");
+  }
+
+  const folderFullPath = path.join(folderpath, folderName);
+  const zip = new JSZip();
+
+  // Helper to recursively add files and folders
+  async function addFolderToZip(zipFolder, folderPath) {
+    const entries = await fs.promises.readdir(folderPath, {
+      withFileTypes: true,
+    });
+
+    for (const entry of entries) {
+      const fullPath = path.join(folderPath, entry.name);
+      if (entry.isDirectory()) {
+        const newZipFolder = zipFolder.folder(entry.name);
+        await addFolderToZip(newZipFolder, fullPath);
+      } else {
+        const fileContent = await fs.promises.readFile(fullPath);
+        zipFolder.file(entry.name, fileContent);
+      }
     }
   }
 
-  res.redirect(`/?path=${queryPath}`);
+  try {
+    await addFolderToZip(zip.folder(folderName), folderFullPath);
+
+    const zipContent = await zip.generateAsync({ type: "nodebuffer" });
+
+    res.set({
+      "Content-Type": "application/zip",
+      "Content-Disposition": `attachment; filename="${folderName}.zip"`,
+    });
+
+    res.send(zipContent);
+  } catch (err) {
+    console.error("Error creating zip:", err);
+    res.status(500).send("Error creating zip file.");
+  }
+});
+
+app.post("/downloadFile", async (req, res) => {
+  const fileName = req.body.file_name?.trim();
+
+  if (fileName) {
+    let fileFullPath = path.join(folderpath, fileName);
+    res.download(fileFullPath, (err) => {
+      if (err) {
+        console.error("Download error:", err.message);
+        res.status(500).send("File download failed.");
+      }
+    });
+  } else {
+    res.status(400).send("No file specified.");
+  }
 });
 
 app.post("/uploadFiles", (req, res) => {
@@ -229,6 +310,8 @@ app.post("/uploadFiles", (req, res) => {
       console.error("Form parse error:", err);
       return res.status(500).send("Form error");
     }
+
+    const queryPath = fields.query_path || "";
 
     const uploadedFiles = Array.isArray(files.files)
       ? files.files
@@ -243,12 +326,12 @@ app.post("/uploadFiles", (req, res) => {
 
       let finalName = originalName;
       let counter = 0;
-      let targetPath = path.join(folderpath, finalName);
+      let targetPath = path.join(__dirname, "files" + queryPath, finalName);
 
       while (fs.existsSync(targetPath)) {
         counter++;
         finalName = `${base}(${counter})${ext}`;
-        targetPath = path.join(folderpath, finalName);
+        targetPath = path.join(__dirname, "files" + queryPath, finalName);
       }
 
       try {
@@ -258,12 +341,15 @@ app.post("/uploadFiles", (req, res) => {
         console.error("Error moving file:", moveErr);
       }
     }
-
+    console.log("upl: ", queryPath);
     res.redirect(`/?path=${queryPath}`);
   });
 });
 
-app.use(express.static("static"));
+app.get("*", async (req, res) => {
+  res.send("no such path");
+});
+
 app.listen(PORT, function () {
   console.log("start serwera na porcie " + PORT);
 });
