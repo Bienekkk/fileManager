@@ -42,7 +42,7 @@ const content = require("./data/data.json");
 let folderpath = path.join(__dirname, "files");
 // let queryPath = "";
 
-const getFiles = async (queryPath) => {
+const getContext = async (queryPath) => {
   let showBtn = false;
   if (queryPath != "" && queryPath != "/") {
     showBtn = true;
@@ -101,15 +101,69 @@ const getFiles = async (queryPath) => {
   }
 };
 
+const getFileContext = async (queryPath) => {
+  folderpath = path.join(__dirname, `files${queryPath}`);
+  const linkPath = [];
+
+  //console.log("queryPath:", queryPath);
+
+  const segments = queryPath
+    .split("/")
+    .filter((seg, index) => seg !== "" || index === 0);
+
+  let link = "?path=";
+  segments.forEach((segment, index) => {
+    if (index === 0 && segment === "") {
+      linkPath.push({ name: "home", path: link });
+    } else {
+      linkPath.push({ name: "->" });
+      link += "/" + segment;
+      linkPath.push({ name: segment, path: link });
+    }
+  });
+
+  let data = ""
+  try {
+    data = await fs.readFileSync(folderpath, 'utf8',  { recursive: true });
+    console.log(data);
+    // console.log({
+    //   root: queryPath,
+    //   path: linkPath,
+    //   files: myFiles,
+    //   folders: myFolders,
+    // });
+    return {
+      text: data,
+      root: queryPath,
+      path: linkPath,
+    };
+  } catch (err) {
+    console.error("Error reading files:", err);
+    throw new Error("No such path: " + queryPath);
+  }
+};
+
+
 app.get("/", async (req, res) => {
   try {
     const queryPath = req.query.path || "";
-    const context = await getFiles(queryPath);
+    const context = await getContext(queryPath);
     res.render("filemanager.hbs", context);
   } catch (error) {
     res.send(error.message);
   }
 });
+
+
+app.get("/showfile", async (req, res) => {
+  try {
+    const queryPath = req.query.name || "";
+    const context = await getFileContext(queryPath);
+    res.render("textFile.hbs", context);
+  } catch (error) {
+    res.send(error.message);
+  }
+})
 
 app.post("/addNewFolder", async (req, res) => {
   const queryPath = req.body.query_path || "";
@@ -134,6 +188,41 @@ app.post("/addNewFolder", async (req, res) => {
   }
 
   res.redirect(`/?path=${queryPath}`);
+});
+
+app.post("/renameFolder", async (req, res) => {
+  const oldName = req.body.old_name?.trim();
+  const newName = req.body.new_name?.trim();
+
+  arr = oldName.split("/");
+  arr.pop();
+  renameQueryPath = arr.join("/");
+
+  let i = "";
+  if (oldName && newName) {
+    let newFullPath = path.join(
+      __dirname,
+      "files" + renameQueryPath + "/" + newName
+    );
+    let oldFullPath = path.join(folderpath);
+    let counter = 0;
+
+    console.log(newFullPath + i);
+    while (fs.existsSync(newFullPath + i)) {
+      counter++;
+      i = `(${counter})`;
+    }
+    newFullPath += i;
+    try {
+      await fs.rename(oldFullPath, newFullPath, (err) => {
+        console.log("Folder renamed: ", newName + i);
+      });
+    } catch (err) {
+      console.error("Error creating folder:", err.message);
+    }
+  }
+
+  res.redirect(`/?path=${renameQueryPath + "/" + newName + i}`);
 });
 
 app.post("/renameFolder", async (req, res) => {

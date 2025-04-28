@@ -1,0 +1,66 @@
+<div id="path">
+    {{#each path}}
+        {{#if path }}
+            <a href="{{path}}">{{name}}</a>
+        {{else}}
+            <p>{{name}}</p>
+        {{/if}}
+    {{/each}}
+</div>
+
+<div>
+    <button>colors</button>
+    <button>save config</button>
+    <button id="rename_file">rename file</button>
+</div>
+
+<div>
+    <textarea name="text" rows="3" cols="4">
+        {{text}}
+    </textarea>
+    <button>save</button>
+</div>
+
+
+
+<dialog class="rename_file">
+    <p>rename file</p>
+    <form action="/renameFile" method="post">
+        <input type="hidden" name="query_path" value="{{root}}" />
+        <input type="text" name="file_name">
+        <select name="extension" value=".txt">
+            <option value=".css">.css</option>
+            <option value=".js">.js</option>
+            <option value=".json">.json</option>
+            <option value=".html">.html</option>
+            <option value=".txt" selected>.txt</option>
+        </select>
+        <div>
+            <button type="submit">
+                rename
+            </button>
+            <button id="close_rename_file" type="reset" >
+                cancel
+            </button>
+        </div>
+    </form>
+</dialog>
+
+<script>
+    const rename_file = document.getElementById('rename_file')
+    const close_rename_file = document.getElementById('close_rename_file')
+    const renameFileDialog = document.querySelector('.rename_file')
+    close_rename_file.addEventListener("click", () => {
+        renameFileDialog.close()
+    })
+    rename_file.addEventListener("click", () => {
+        renameFileDialog.showModal();
+    })
+
+
+
+    document.getElementById("textarea").onkeyup = function () {
+        // tworzymy numerację linii na podstawie ilości enter-ów w textarea
+        // zmieniamy wysokość textarea w zależności od ilości linii
+    }
+</script>

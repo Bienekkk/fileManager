@@ -68,7 +68,7 @@
                     <td>
                         <img src="./gfx/{{ext}}.png" alt="{{ext}}">
                     </td>
-                    <td>{{ file }}</td>
+                    <td><a href="/showfile?name={{../root}}/{{file}}">{{ file }}</a></td>
 
                     <td>
                         <form method="post" action="/deleteFile" onsubmit="return confirmDelete()">
