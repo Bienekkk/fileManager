@@ -5,18 +5,40 @@
 }
 body {
   height: 100vh;
+  padding: 5px;
+
 }
 .container {
   display: flex;
   width: 100%;
-  margin: 10px;
+  padding: 10px;
   gap: 10px;
 }
 .buttons {
   width: 250px;
 }
 .files {
+  display: flex;
+  width: 100%;
+  padding: 10px;
+  background-color: aliceblue;
+  border-radius: 10px;
+  height: 700px;
+}
+tbody{
+  width: 100%;
+}
+tr{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+td{
   flex: 1;
+}
+.tdName{
+  flex: 3;
 }
 button,
 .btn {
@@ -80,6 +102,85 @@ label {
   gap: 10px;
   margin: 10px;
 }
-img {
+.icon {
   height: 40px;
+}
+.editor {
+  display: flex;
+  font-family: monospace;
+  border: 1px solid black;
+}
+.line-numbers {
+  user-select: none;
+  text-align: right;
+  padding-right: 10px;
+  background: #f0f0f0;
+  color: #888;
+  border-right: 1px solid #ccc;
+  background-color: inherit;
+  color: inherit;
+}
+.line-numbers div {
+  height: 1.2em;
+}
+textarea {
+  flex: 1;
+  border: none;
+  outline: none;
+  resize: none;
+  line-height: 1.2em;
+  font-family: inherit;
+  padding-left: 5px;
+  background: inherit;
+  color: inherit;
+  font-size: inherit;
+}
+
+.editor.light {
+  background-color: white;
+  color: black;
+}
+
+.editor.dark {
+  background-color: #1e1e1e;
+  color: #e0e0e0;
+}
+
+.editor.solarized {
+  background-color: #fdf6e3;
+  color: #657b83;
+}
+canvas{
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.filtersInline{
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+.filtersInline p{
+  text-align: center;
+  margin: 5px;
+}
+.filtersInline div div{
+  border-radius: 10px;
+}
+.closeFilters{
+  width: 200px;
+  height: 40px;
+  border-radius: 20px;
+}
+.filters{
+  padding: 10px;
+  width: 700px;
+  height: 300px;
+  position: absolute;
+  left: calc(50% - 350px);
+  top: 0;
+  border-radius: 0 0 20px 20px;
+  border: 1px solid white;
 }

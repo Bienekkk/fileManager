@@ -1,66 +1,147 @@
-<div id="path">
-    {{#each path}}
-        {{#if path }}
-            <a href="{{path}}">{{name}}</a>
-        {{else}}
-            <p>{{name}}</p>
-        {{/if}}
-    {{/each}}
+<div id="path" class="path">
+  {{#each path}}
+    {{#if path}}
+      <a href="{{path}}">{{name}}</a>
+    {{else}}
+      <p>{{name}}</p>
+    {{/if}}
+  {{/each}}
 </div>
 
-<div>
-    <button>colors</button>
-    <button>save config</button>
+<div class="container">
+  <div class="buttons">
+    <button id="increase-font">+</button>
+    <button id="theme-toggle">colors</button>
+    <button id="decrease-font">-</button>
+    <button id="save-config">save config</button>
     <button id="rename_file">rename file</button>
+    <a class="btn" href="/previewFile?name={{root}}" id="preview">preview file</a>
+  </div>
+
+  <div class="files">
+    <form action="/saveFile" method="post">
+      <div class="editor">
+        <div class="line-numbers" id="line-numbers"></div>
+        <textarea id="textarea" name="text" rows="10" cols="60">{{text}}</textarea>
+      </div>
+      <input type="hidden" name="file_path" value="{{root}}" />
+      <button type="submit">save</button>
+    </form>
+  </div>
 </div>
-
-<div>
-    <textarea name="text" rows="3" cols="4">
-        {{text}}
-    </textarea>
-    <button>save</button>
-</div>
-
-
 
 <dialog class="rename_file">
-    <p>rename file</p>
-    <form action="/renameFile" method="post">
-        <input type="hidden" name="query_path" value="{{root}}" />
-        <input type="text" name="file_name">
-        <select name="extension" value=".txt">
-            <option value=".css">.css</option>
-            <option value=".js">.js</option>
-            <option value=".json">.json</option>
-            <option value=".html">.html</option>
-            <option value=".txt" selected>.txt</option>
-        </select>
-        <div>
-            <button type="submit">
-                rename
-            </button>
-            <button id="close_rename_file" type="reset" >
-                cancel
-            </button>
-        </div>
-    </form>
+  <p>rename file</p>
+  <form action="/renameFile" method="post">
+    <input type="hidden" name="old_name" value="{{root}}" />
+    <input type="text" name="new_name" />
+    <select name="extension" value=".txt">
+      <option value=".css">.css</option>
+      <option value=".js">.js</option>
+      <option value=".json">.json</option>
+      <option value=".html">.html</option>
+      <option value=".txt" selected>.txt</option>
+    </select>
+    <div>
+      <button type="submit">
+        rename
+      </button>
+      <button id="close_rename_file" type="reset">
+        cancel
+      </button>
+    </div>
+  </form>
 </dialog>
 
 <script>
-    const rename_file = document.getElementById('rename_file')
-    const close_rename_file = document.getElementById('close_rename_file')
-    const renameFileDialog = document.querySelector('.rename_file')
-    close_rename_file.addEventListener("click", () => {
-        renameFileDialog.close()
-    })
-    rename_file.addEventListener("click", () => {
-        renameFileDialog.showModal();
-    })
+  const rename_file = document.getElementById('rename_file')
+  const close_rename_file = document.getElementById('close_rename_file')
+  const renameFileDialog = document.querySelector('.rename_file')
+  close_rename_file.addEventListener("click", () => { 
+    renameFileDialog.close()
+  }) 
+  rename_file.addEventListener("click", () => { 
+    renameFileDialog.showModal();
+  }) 
+  
 
 
+  const textarea = document.getElementById('textarea');
+  const lineNumbers = document.getElementById('line-numbers');
 
-    document.getElementById("textarea").onkeyup = function () {
-        // tworzymy numerację linii na podstawie ilości enter-ów w textarea
-        // zmieniamy wysokość textarea w zależności od ilości linii
+  function updateLineNumbers() {
+    const lines = textarea.value.split("\n").length;
+    lineNumbers.innerHTML = "";
+    for (let i = 1; i <= lines; i++) {
+      const line = document.createElement("div");
+      line.textContent = i;
+      lineNumbers.appendChild(line);
     }
+  }
+
+  textarea.onkeyup = () => {
+    updateLineNumbers()
+  } 
+
+  textarea.addEventListener("scroll", () => {
+    lineNumbers.scrollTop = textarea.scrollTop;
+  });
+
+  updateLineNumbers()
+
+
+  // config
+  let themes = ["light", "dark", "solarized"];
+  let currentThemeIndex = 0;
+  let fontSize = 16;
+
+  const editor = document.querySelector(".editor");
+
+   fetch("/getConfig")
+    .then(res => res.json())
+    .then(config => {
+      if (config.theme) {
+        currentThemeIndex = themes.indexOf(config.theme);
+        applyTheme();
+      }
+      if (config.fontSize) {
+        fontSize = config.fontSize;
+        applyFontSize();
+      }
+    });
+
+  function applyFontSize() {
+    editor.style.fontSize = fontSize + "px";
+  }
+
+  function applyTheme() {
+    editor.className = "editor"; // reset class
+    editor.classList.add(themes[currentThemeIndex]);
+  }
+
+  document.getElementById("increase-font").onclick = () => {
+    fontSize += 1;
+    applyFontSize();
+  };
+
+  document.getElementById("decrease-font").onclick = () => {
+    fontSize = Math.max(10, fontSize - 1);
+    applyFontSize();
+  };
+
+  document.getElementById("theme-toggle").onclick = () => {
+    currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+    applyTheme();
+  };
+
+  document.getElementById("save-config").onclick = () => {
+    fetch("/saveConfig", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        theme: themes[currentThemeIndex],
+        fontSize
+      })
+    }).then(res => res.text()).then(msg => alert(msg));
+  };
 </script>

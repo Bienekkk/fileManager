@@ -1,0 +1,298 @@
+<div id="path">
+    {{#each path}}
+        {{#if path}}
+            <a href="{{path}}">{{name}}</a>
+        {{else}}
+            <p>{{name}}</p>
+        {{/if}}
+    {{/each}}
+</div>
+<div class='container'>
+    <div class="buttons">
+        <button id="show_filters">filters</button>
+        <button id="crop">crop</button>
+        <button id="cancel">cancel</button>
+        <button id="rename_file">rename</button>
+        <button id="save">save</button>
+        <a class="btn" href="/previewFile?name={{root}}" id="preview">preview file</a>
+    </div>
+
+    <div class="files">
+        <canvas id="myCanvas"></canvas>
+    </div>
+</div>
+
+<dialog class="filters" id="filters">
+    <div class="filtersInline">
+        {{#each effects}}
+            <div>
+                <div style="background-image: url('/files{{../root}}'); filter: {{name}}(100%); width: 100px; height: 100px; background-size: cover; margin: 5px;" id="{{name}}"></div>
+                <p>{{name}}</p>
+            </div>
+        {{/each}}
+        <div>
+            <div style="background-image: url('/files{{root}}'); filter: none; width: 100px; height: 100px; background-size: cover; margin: 5px;" id="none"></div>
+            <p>none</p>
+        </div>
+    </div>
+
+    <div class="filtersInline">
+        <div>
+            <p>brightness</p>
+            <input type="range" min="20" max="200" steps="1" value="100" id="brightness">
+        </div>
+        <div>
+            <p>contrast</p>
+            <input type="range" min="20" max="200" steps="1" value="100" id="contrast">
+        </div>
+        <div>
+            <p>huerotation</p>
+            <input type="range" min="0" max="180" steps="1" value="0" id="huerotation">
+        </div>
+    </div>
+    
+    <div class="filtersInline">
+        <button id="close_filters" class="closeFilters">close</button>
+    </div>
+</dialog>
+
+<dialog class="rename_file">
+  <p>rename file</p>
+  <form action="/renameFile" method="post">
+    <input type="hidden" name="old_name" value="{{root}}" />
+    <input type="text" name="new_name" />
+    <input type="hidden" name="extension" value=".{{ext}}">
+    <div>
+      <button type="submit">
+        rename
+      </button>
+      <button id="close_rename_file" type="reset">
+        cancel
+      </button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+  const canvas = document.getElementById('myCanvas');
+  const ctx = canvas.getContext('2d');
+
+  const img = new Image();
+  img.src = '/files{{root}}';
+
+  const baseFilters = ['grayscale', 'sepia', 'invert', 'none'];
+  let selectedFilter = 'none';
+
+  const sliders = {
+    brightness: document.getElementById('brightness'),
+    contrast: document.getElementById('contrast'),
+    huerotation: document.getElementById('huerotation')
+  };
+
+  let isDrawing = false;
+  let startX = 0;
+  let startY = 0;
+  let rect = null;
+
+// pozycja myszy względem kontenera canvas
+
+function getMousePos(canvas, evt) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+
+  return {
+    x: (evt.clientX - rect.left) * scaleX,
+    y: (evt.clientY - rect.top) * scaleY
+  };
+}
+
+// mousedown na canvasie
+
+canvas.addEventListener('mousedown', function (e) {
+    const mousePos = getMousePos(canvas, e);
+    startX = mousePos.x;
+    startY = mousePos.y;
+    isDrawing = true;
+});
+
+// mousemove nad canvasem
+
+  canvas.addEventListener('mousemove', function (e) {
+    if (!isDrawing) return;
+
+    const mousePos = getMousePos(canvas, e);
+    const currentX = mousePos.x;
+    const currentY = mousePos.y;
+
+    const width = currentX - startX;
+    const height = currentY - startY;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0);
+
+    ctx.strokeStyle = 'red';
+    ctx.lineWidth = 10;
+    ctx.strokeRect(startX, startY, width, height);
+  });
+
+// mouseup nad canvasem
+
+  canvas.addEventListener('mouseup', function (e) {
+    const mousePos = getMousePos(canvas, e);
+    const endX = mousePos.x;
+    const endY = mousePos.y;
+
+    rect = {
+      x: Math.min(startX, endX),
+      y: Math.min(startY, endY),
+      width: Math.abs(endX - startX),
+      height: Math.abs(endY - startY),
+    };
+
+    isDrawing = false;
+  });
+
+// mouseout
+
+canvas.addEventListener('mouseout', function () {
+    isDrawing = false;
+});
+
+document.getElementById('crop').addEventListener('click', function () {
+  if (!rect) {
+    alert("No selection to crop!");
+    return;
+  }
+
+  const tempCanvas = document.createElement('canvas');
+  const tempCtx = tempCanvas.getContext('2d');
+
+  tempCanvas.width = rect.width;
+  tempCanvas.height = rect.height;
+
+  tempCtx.drawImage(img, rect.x, rect.y, rect.width, rect.height, 0, 0, rect.width, rect.height);
+
+  img.src = tempCanvas.toDataURL();
+
+  img.onload = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0);
+
+    applyFiltersToCanvas();
+  };
+
+  rect = null;
+});
+
+document.getElementById('cancel').addEventListener('click', function () {
+  rect = null;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(img, 0, 0);
+})
+
+  function applyFiltersToCanvas() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let filterStr = '';
+
+    if (selectedFilter !== 'none') {
+      filterStr += `${selectedFilter}(100%) `;
+    }
+
+    filterStr += `brightness(${sliders.brightness.value}%) `;
+    filterStr += `contrast(${sliders.contrast.value}%) `;
+    filterStr += `hue-rotate(${sliders.huerotation.value}deg)`;
+
+    ctx.filter = filterStr.trim();
+    ctx.drawImage(img, 0, 0);
+
+    ctx.filter = 'none';
+  }
+
+  document.getElementById('save').addEventListener('click', async () => {
+    if (canvas.width === 0 || canvas.height === 0) {
+        alert('canvas jest pusty lub ma zerowe wymiary.');
+        return;
+    }
+
+    applyFiltersToCanvas()
+
+    canvas.toBlob(function (blob) {
+
+        // form data
+        const formData = new FormData();
+        
+        // append: wysyłamy blob czyli plik oraz dodatkowe pole formularza, np. podające serwerowi gdzie i pod jaką nazwą zapisać plik
+        console.log('{{root}}') // /myFolder/tygrysByAI.jpg
+        formData.append('blob', blob, '{{root}}');
+
+        fetch("/saveCanvasImage", {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => {
+
+                if (!response.ok) {
+                    return { status: "problem z serwerem - nie zwrócił statusu 200" }
+                }
+                return response.json();
+            })
+
+            .then(data => {    
+                if (data.status == "ok")
+                    alert('Zawartość canvas przesłana!');
+                else
+                    alert("błąd podczas przesłania")
+            })
+            .catch(error => {          
+                alert('błąd podczas przesyłania: ' + error.message);
+            });
+      }, 'image/{{ext}}');
+  });
+
+  baseFilters.forEach((filterName) => {
+    const el = document.getElementById(filterName);
+    el.style.cursor = 'pointer';
+
+    el.onclick = () => {
+      baseFilters.forEach(f => {
+        document.getElementById(f).style.border = 'none';
+      });
+
+      selectedFilter = filterName;
+      el.style.border = '3px solid red';
+
+      applyFiltersToCanvas();
+    };
+  });
+
+  Object.values(sliders).forEach(slider => {
+    slider.addEventListener('input', applyFiltersToCanvas);
+  });
+
+  const filters = document.getElementById('filters');
+  const showFiltersBtn = document.getElementById('show_filters');
+  const closeFiltersBtn = document.getElementById('close_filters');
+
+  showFiltersBtn.onclick = () => filters.showModal();
+  closeFiltersBtn.onclick = () => filters.close();
+
+  img.onload = function () {
+    canvas.width = img.width;
+    canvas.height = img.height;
+    ctx.drawImage(img, 0, 0);
+    applyFiltersToCanvas();
+  };
+
+
+  const rename_file = document.getElementById('rename_file')
+  const close_rename_file = document.getElementById('close_rename_file')
+  const renameFileDialog = document.querySelector('.rename_file')
+  close_rename_file.addEventListener("click", () => { 
+    renameFileDialog.close()
+  }) 
+  rename_file.addEventListener("click", () => { 
+    renameFileDialog.showModal();
+  }) 
+</script>

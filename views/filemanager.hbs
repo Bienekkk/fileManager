@@ -34,10 +34,10 @@
             {{#each folders}}
                 <tr>
                     <td>
-                        <img src="./gfx/folders.png" alt="{{ext}}">
+                        <img class="icon" src="./gfx/folders.png" alt="folder">
                     </td>
 
-                    <td>
+                    <td class="tdName">
                         <form action="/" method="get">
                             {{!-- <p>{{../root}}</p> --}}
                             <input type="hidden" value="{{../root}}/{{folder}}" name="path">
@@ -66,9 +66,16 @@
             {{#each files}}
                 <tr>
                     <td>
-                        <img src="./gfx/{{ext}}.png" alt="{{ext}}">
+                        <img class="icon" src="./gfx/{{ext}}.png" alt="{{ext}}">
                     </td>
-                    <td><a href="/showfile?name={{../root}}/{{file}}">{{ file }}</a></td>
+                    <td class="tdName">
+                        {{#if type}}
+                            <a href="/showimage?name={{../root}}/{{file}}">{{ file }}</a>
+                        {{else}}
+                            <a href="/showfile?name={{../root}}/{{file}}">{{ file }}</a>
+                        {{/if}}
+
+                    </td>
 
                     <td>
                         <form method="post" action="/deleteFile" onsubmit="return confirmDelete()">
@@ -201,4 +208,74 @@
             uploadSubmit.innerText = 'upload'
         }
     });
+    
+
+
+
+    document.querySelector("html").ondragover = function (e) {
+        console.log("dragover nad dokumentem html")
+        e.preventDefault(); // usuwa domyślne zachowanie strony po wykonaniu zdarzenia, warto zakomentować i sprawdzić
+        e.stopPropagation(); // zatrzymuje dalszą propagację zdarzenia, warto zakomentować i sprawdzić
+    }
+
+    document.querySelector("html").ondrop = function (e) {
+        console.log("drop na dokumencie html")
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    document.querySelector(".files").ondragenter = function (e) {
+        console.log("drag enter na divie")
+        e.stopPropagation();
+        e.preventDefault();
+    }
+
+    document.querySelector(".files").ondragover = function (e) {
+        console.log("drag over na divie")
+        e.stopPropagation();
+        e.preventDefault();
+    }
+
+    document.querySelector(".files").ondragleave = function (e) {
+        console.log("dragleave na divie")
+        e.stopPropagation();
+        e.preventDefault();
+    }
+
+    document.querySelector(".files").ondrop = function (e) {
+        console.log("drop na divie");
+        e.stopPropagation();
+        e.preventDefault();
+
+        const files = e.dataTransfer.files;
+        console.log(files);
+
+        const fd = new FormData();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentPath = urlParams.get("path") || "";
+        console.log(currentPath)
+        fd.append("query_path", currentPath);
+
+        for (let i = 0; i < files.length; i++) {
+            fd.append("file", files[i]);
+        }
+
+        fetch("/uploadFilesDrag", {
+            method: "POST",
+            body: fd
+        })
+            .then(response => {
+            if (!response.ok) throw new Error("Upload failed");
+            return response.text();
+            })
+            .then(data => {
+            console.log("Upload complete");
+            location.reload(); // ✅ refresh to show updated file list
+            })
+            .catch(error => {
+            console.error("Upload error:", error);
+            alert("Upload failed!");
+            });
+    };
 </script>
