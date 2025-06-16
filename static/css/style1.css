@@ -48,6 +48,10 @@ button,
   border-radius: 10px;
   margin: 2px;
   color: white;
+  width: 100%;
+  display: block;
+  text-decoration: none;
+  text-align: center;
 }
 button:hover,
 .btn:hover {
@@ -183,4 +187,21 @@ canvas{
   top: 0;
   border-radius: 0 0 20px 20px;
   border: 1px solid white;
+}
+
+.reg{
+  display: flex;
+  flex-direction: column;
+  margin: 20px auto;
+  width: 300px;
+  gap: 20px;
+  border: 2px solid aqua;
+  background-color: aqua;
+  border-radius: 10px;
+  padding: 10px;
+}
+.reg input{
+  height: 30px;
+  border-radius: 15px;
+  padding: 5px;
 }

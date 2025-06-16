@@ -8,6 +8,8 @@ const fs = require("fs");
 const JSZip = require("jszip");
 const formidable = require("formidable");
 const multer = require('multer');
+const bcryptjs = require("bcryptjs")
+const { hash, compare } = bcryptjs;
 
 app.set("views", path.join(__dirname, "views"));
 app.engine(
@@ -206,6 +208,35 @@ app.get("/", async (req, res) => {
     res.send(error.message);
   }
 });
+
+app.get("/register", async (req, res) => {
+  res.render("register.hbs")
+})
+
+app.post("/register", async(req, res) => {
+  console.log("dodawanie usera", req.body.name)
+  const name = req.body.name;
+  const pass1 = req.body.pass1;
+  const pass2 = req.body.pass2;
+  if(pass1 == pass2){
+    const encryptPass = async (password) => {
+      let encryptedPassword = await hash(password, 10);
+      console.log({ encryptedPassword: encryptedPassword });
+    }
+  
+    const encryptedPassword = await encryptPass(pass1)
+    console.log(encryptedPassword)
+  
+    const usersData = {"name": name, "pass": encryptedPassword}
+    await fs.writeFile('/data/users.json', JSON.stringify(usersData, null, 2), 'utf8');
+  }
+  res.redirect("/login")
+})
+
+app.get("/login", async (req, res) => {
+  const context = {d: "d"};
+  res.render("login.hbs", context)
+})  
 
 app.get("/showimage", async (req, res) => {
   try {
